@@ -50,6 +50,10 @@ fi
 
 CC_SRC_LANGUAGE=$(echo "$CC_SRC_LANGUAGE" | tr [:upper:] [:lower:])
 
+echo '
+# 安装依赖，go用go mod vendor，javascript用npm install，java用gradlew installDist
+'
+checkpoint 3
 # do some language specific preparation to the chaincode before packaging
 if [ "$CC_SRC_LANGUAGE" = "go" ]; then
   CC_RUNTIME_LANGUAGE=golang
@@ -134,12 +138,20 @@ function checkPrereqs() {
   fi
 }
 
-#check for prerequisites
+# 只是检查依赖，不重要
 checkPrereqs
 
+echo '
+# 打包链码，通过peer chaincode package
+'
+checkpoint 3
 ## package the chaincode
 packageChaincode
 
+echo '
+# 安装链码，通过peer chaincode package，分别为两个组织安装上链码，并检查链码是否安装完毕
+'
+checkpoint 3
 ## Install chaincode on peer0.org1 and peer0.org2
 infoln "Installing chaincode on peer0.org1..."
 installChaincode 1
@@ -149,6 +161,10 @@ installChaincode 2
 ## query whether the chaincode is installed
 queryInstalled 1
 
+echo '
+# 批准链码，代表该组织批准链码，通过peer chaincode approveformyory，让两个组织分别批准，并且查看当前批准情况
+'
+checkpoint 3
 ## approve the definition for org1
 approveForMyOrg 1
 
@@ -165,6 +181,10 @@ approveForMyOrg 2
 checkCommitReadiness 1 "\"Org1MSP\": true" "\"Org2MSP\": true"
 checkCommitReadiness 2 "\"Org1MSP\": true" "\"Org2MSP\": true"
 
+echo '
+# 提交链码，通过peer chaincode commit，让Org1提交链码，再两个组织都查询链码提交情况
+'
+checkpoint 3
 ## now that we know for sure both orgs have approved, commit the definition
 commitChaincodeDefinition 1 2
 
@@ -172,8 +192,7 @@ commitChaincodeDefinition 1 2
 queryCommitted 1
 queryCommitted 2
 
-## Invoke the chaincode - this does require that the chaincode have the 'initLedger'
-## method defined
+## 判断是否要调用链码初始化方法，暂时不考虑这个
 if [ "$CC_INIT_FCN" = "NA" ]; then
   infoln "Chaincode initialization is not required"
 else

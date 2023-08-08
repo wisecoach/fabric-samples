@@ -31,6 +31,10 @@ checkpoint 1
 echo '
 # 部署链码。它的大致流程为：
 # 1. 安装依赖，go用go mod vendor，javascript用npm install，java用gradlew installDist
+# 2. 打包链码，通过peer chaincode package
+# 3. 安装链码，为该节点安装链码，通过peer chaincode install
+# 4. 批准链码，代表该组织批准链码，通过peer chaincode approveformyory
+# 5. 提交链码，通过peer chaincode commit
 '
 checkpoint 1
 ./network.sh deployCC  -ccn basic -ccp "../asset-transfer-basic/chaincode-java/" -ccl java
