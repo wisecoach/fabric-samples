@@ -4,6 +4,7 @@
 . scripts/envVar.sh
 . scripts/utils.sh
 
+# 这里定义了通道的信息
 CHANNEL_NAME="$1"
 DELAY="$2"
 MAX_RETRY="$3"
@@ -79,7 +80,12 @@ setAnchorPeer() {
 
 FABRIC_CFG_PATH=${PWD}/configtx
 
-## Create channel genesis block
+echo '
+  # 创建创世区块：
+  # 使用configtxgen工具读取configtx/configtx.yaml来生成创世区块，注意fabric的创世区块就是一个配置区块
+  # 重点在于对configtx.yaml的解析，以及configtx.yaml和创世区块的关系
+'
+checkpoint 2
 infoln "Generating channel genesis block '${CHANNEL_NAME}.block'"
 createChannelGenesisBlock
 
@@ -87,16 +93,33 @@ FABRIC_CFG_PATH=$PWD/../config/
 BLOCKFILE="./channel-artifacts/${CHANNEL_NAME}.block"
 
 ## Create channel
+echo '
+  # 创建通道：
+  # 使用osnadmin工具，它是orderer节点的客户端，控制该orderer订阅该通道，为该通道进行排序服务，自V2.3版本后，放弃系统通道记录应用通道的创建，而是链下让orderer节点订阅通道
+  # 订阅一个应用通道，只需要一个创世区块
+'
+checkpoint 2
 infoln "Creating channel ${CHANNEL_NAME}"
 createChannel
 successln "Channel '$CHANNEL_NAME' created"
 
+echo '
+  # 加入通道：
+  # 即使组织被写入到创世区块中，peer节点是不知道它要维护，需要通过创世区块来告知其要去维护该通道
+'
+checkpoint 2
 ## Join all the peers to the channel
 infoln "Joining org1 peer to the channel..."
 joinChannel 1
 infoln "Joining org2 peer to the channel..."
 joinChannel 2
 
+echo '
+  # 配置锚节点：
+  # 在一个组织配置锚节点以前，对于本组织，一个peer仅知道orderer节点的地址（配置区块中），而不知道该组织其他peer的地址；对于外部组织，无锚节点即该组织不可交互
+  # 锚节点的配置需要写入配置区块
+'
+checkpoint 2
 ## Set the anchor peers for each org in the channel
 infoln "Setting anchor peer for org1..."
 setAnchorPeer 1

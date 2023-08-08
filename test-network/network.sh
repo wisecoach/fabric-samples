@@ -137,11 +137,17 @@ function checkPrereqs() {
 
 # Create Organization crypto material using cryptogen or CAs
 function createOrgs() {
+  echo '
+  # 创建组织的基本信息，这里主要包含以下的流程：
+  1. 启动CA节点
+  2. 注册Org1、Org2、Orderer三个组织的证书，保存到organizations文件夹下，还会生成peer节点和orderer节点的msp文件夹
+  '
+  checkpoint 2
   if [ -d "organizations/peerOrganizations" ]; then
     rm -Rf organizations/peerOrganizations && rm -Rf organizations/ordererOrganizations
   fi
 
-  # Create crypto material using cryptogen
+  # 这是用本地证书生成器，在实际生产场景中不合适，我们直接看CA的情况
   if [ "$CRYPTO" == "cryptogen" ]; then
     which cryptogen
     if [ "$?" -ne 0 ]; then
@@ -181,13 +187,18 @@ function createOrgs() {
 
   fi
 
-  # Create crypto material using Fabric CA
+  echo '
+  # 我们使用CA来生成证书，首先要启动各个组织的CA容器，对应的docker-compose文件为compose/docker-compose-ca.yaml文件
+  '
+  checkpoint 3
   if [ "$CRYPTO" == "Certificate Authorities" ]; then
     infoln "Generating certificates using Fabric CA"
+    # 这里在使用docker-compose 来启动
     ${CONTAINER_CLI_COMPOSE} -f compose/$COMPOSE_FILE_CA -f compose/$CONTAINER_CLI/${CONTAINER_CLI}-$COMPOSE_FILE_CA up -d 2>&1
 
     . organizations/fabric-ca/registerEnroll.sh
 
+    # 这是在监听CA节点是否初始化完毕
     while :
     do
       if [ ! -f "organizations/fabric-ca/org1/tls-cert.pem" ]; then
@@ -197,20 +208,31 @@ function createOrgs() {
       fi
     done
 
-    infoln "Creating Org1 Identities"
-
+    echo '
+    # 我们使用CA来生成证书，注册Org1的证书
+    '
+    checkpoint 3
     createOrg1
 
-    infoln "Creating Org2 Identities"
-
+    echo '
+    # 我们使用CA来生成证书，注册Org2的证书
+    '
+    checkpoint 3
     createOrg2
 
-    infoln "Creating Orderer Org Identities"
-
+    echo '
+    # 我们使用CA来生成证书，注册Orderer的证书
+    '
+    checkpoint 3
     createOrderer
 
   fi
 
+  echo '
+  # 创建组织的ccp配置文件，这个用于老版本的fabric-java-gateway客户端使用，它用于给客户端指出要找哪些节点，命令行和新版的fabric-gateway客户端都是不需要的
+  # 到目前为止所有的组织文件夹创建完毕
+  '
+  checkpoint 3
   infoln "Generating CCP files for Org1 and Org2"
   ./organizations/ccp-generate.sh
 }
@@ -243,13 +265,24 @@ function createOrgs() {
 
 # Bring up the peer and orderer nodes using docker compose.
 function networkUp() {
+  echo "启动网络！！！"
+
+  # 仅检查，不用看
   checkPrereqs
 
-  # generate artifacts if they don't exist
+  # 生成peer组织的文件
   if [ ! -d "organizations/peerOrganizations" ]; then
     createOrgs
   fi
 
+
+  echo '
+  # 启动所有组织的peer节点和orderer节点，对应的docker-compose文件为compose/compose-test-net.yaml和compose/docker/docker-compose-test-net.yaml
+  # 重点在于：
+  #   1. peer节点和orderer节点挂载了上一步中生成的msp文件夹和tls文件夹，如Org1的peer0挂载了org1.example.com/peers/peer0.org1.example.com
+  #   2. peer节点和orderer节点监听的端口，我们看到后，得知道在访问的是哪个容器
+  '
+  checkpoint 2
   COMPOSE_FILES="-f compose/${COMPOSE_FILE_BASE} -f compose/${CONTAINER_CLI}/${CONTAINER_CLI}-${COMPOSE_FILE_BASE}"
 
   if [ "${DATABASE}" == "couchdb" ]; then

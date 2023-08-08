@@ -169,6 +169,29 @@ function fatalln() {
   exit 1
 }
 
+function get_char() {
+	SAVEDSTTY=`stty -g`
+	stty -echo
+	stty cbreak
+	dd if=/dev/tty bs=1 count=1 2> /dev/null
+	stty -raw
+	stty echo
+	stty $SAVEDSTTY
+}
+
+function pause() {
+  echo "按任意键继续！"
+  char=`get_char`
+}
+
+function checkpoint() {
+  local level=${1-3}
+  local env_level=$CHECKPOINT_LEVEL
+  if [ "$level" -le "$env_level" ]; then
+    pause
+  fi
+}
+
 export -f errorln
 export -f successln
 export -f infoln
