@@ -5,7 +5,7 @@
 # 2：大步骤下的大的停顿，如./network up下最重要的createOrgs
 # 3：更细的步骤
 # 4：最细的停顿
-export CHECKPOINT_LEVEL=0
+export CHECKPOINT_LEVEL=4
 echo '
 # 关闭网络，清空产生的文件
 '
