@@ -28,3 +28,6 @@ fetchBlock() {
 
 #fetchBlock config
 #invokeChaincode
+fetchBlock 2
+fetchBlock 3
+fetchBlock 4
