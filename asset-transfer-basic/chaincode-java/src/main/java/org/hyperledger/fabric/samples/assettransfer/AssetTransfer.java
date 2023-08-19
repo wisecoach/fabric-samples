@@ -75,7 +75,7 @@ public final class AssetTransfer implements ContractInterface {
      * @param appraisedValue the appraisedValue of the new asset
      * @return the created asset
      */
-    @Transaction(intent = Transaction.TYPE.SUBMIT)
+    @Transaction(intent = Transaction.TYPE.SUBMIT, name = "CreateAsset")
     public Asset CreateAsset(final Context ctx, final String assetID, final String color, final int size,
         final String owner, final int appraisedValue) {
         ChaincodeStub stub = ctx.getStub();
